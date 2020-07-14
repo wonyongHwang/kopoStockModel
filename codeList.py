@@ -61,6 +61,24 @@ class queryCodeList:
 
         return retStr if retStr is not None else NO_MATCHING_DATA
 
+    # Author : 3기 황현빈
+    def download_stock_codes(self, market=None, delisted=False):
+        params = {'method': 'download'}
+
+        if market.lower() in MARKET_CODE_DICT:
+            params['marketType'] = MARKET_CODE_DICT[market]
+
+        if not delisted:
+            params['searchType'] = 13
+
+        params_string = urllib.parse.urlencode(params)
+        request_url = urllib.parse.urlunsplit(['http', 'kind.krx.co.kr/corpgeneral/corpList.do', '', params_string, ''])
+
+        df = pd.read_html(request_url, header=0)[0]
+        df.종목코드 = df.종목코드.map('{:06d}'.format)
+
+        return df
+
     @staticmethod
     def isEqualCode(code1, code2):
         return code1 == code2
