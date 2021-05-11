@@ -347,8 +347,8 @@ kospi_stocks = qc.download_stock_codes('kospi')
 codeNum = list(kospi_stocks['종목코드'])
 companyName = list(kospi_stocks['회사명'])
 
-for i in range(0, len(kospi_stocks)):
-    ichimokuDataFrame(codeNum[i], companyName[i])
+# for i in range(0, len(kospi_stocks)):
+#     ichimokuDataFrame(codeNum[i], companyName[i])
 
 
 
@@ -377,14 +377,14 @@ for i in myCodeList:
                 tempText += ' grad: %4.2f, R^2: %4.2f, p_value: %4.2f' % (grad, r_square*r_square, p_value)
 
                 fig = px.line(x=tempX, y=tempY, labels={'x': 'days', 'y': 'MA diff'}, title=tempText)
-                #fig.show()
+                # fig.show()
                 tempToday = str(date.today())
                 tempToday += " 회귀"
                 if not os.path.exists(tempToday):
                     os.mkdir(tempToday)
                 tempStr = tempToday+"/"+code_name + ".png"
                 fig.write_image(tempStr)
-                #print(fig)
+                # print(fig)
         except Exception as e:
             print("Error Occurs while trying to get lineregress X:", tempX)
             print("Error Occurs while trying to get lineregress Y:",tempY)
