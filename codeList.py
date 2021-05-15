@@ -82,6 +82,7 @@ class queryCodeList:
     @staticmethod
     def isEqualCode(code1, code2):
         return code1 == code2
+    # ref : https://sshkim.tistory.com/184
 
     @classmethod
     def getStockInfo(cls):
@@ -92,14 +93,17 @@ class queryCodeList:
 
 tc = queryCodeList()
 print(tc.get_code_list())
-tc2 = queryCodeList()
-# print(queryCodeList.isEqualCode("1010","1010"))
-'''
+
+print(queryCodeList.isEqualCode("1010","1010"))
+
 queryCodeList.status = 1
 queryCodeList.getStockInfo() # 1
 queryCodeList.status = -1
+
 tc.getStockInfo()  # -1
 queryCodeList.status = -2
+
+tc2 = queryCodeList()
 tc2.getStockInfo() # -2
 
 tc3 = queryCodeList()
@@ -107,13 +111,13 @@ tc3.getStockInfo2() # 생성자에 status = 0 을 넣으면 0, 없으면 -2;;;
 # 생성자에서 self.status = 0로 쓰는 의미->status는 이제부터 정적객체가 아니라 인스턴스 객체로 다룬다는 의미
 
 queryCodeList.getStockInfo() # -2 # 파이썬 클래스의 정적영역은 동적생성과 무관하게 상태를 유지
-'''
+
 
 # stocks = tc.get_stock_info('kospi')
 # print(stocks.head(100))
 
 # stocks1 = tc.get_code_list('kospi')
 # print(stocks1)
-# print(len(stocks1)) # 1388
+# print(len(stocks1)) # 1388철
 
-#print(tc.get_codename_by_codenum("005560")) # JS전선
+print(tc.get_codename_by_codenum("016380")) # KG동부제철
