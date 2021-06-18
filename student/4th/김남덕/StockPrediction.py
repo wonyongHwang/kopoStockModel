@@ -1,38 +1,24 @@
-#!/usr/bin/env python
-# coding: utf-8
+# -----------------------------------------------------------------
+#    Author: 김남덕
+#    Created: 2021.06.18
+#    Description:
+#    KOSPI 시총 상위 10개 종목의 데이터를 기반으로 투자 심리선 지표 제작.
+#    투자심리선이란 최근 2주(10일) 동안 주가가 전일과 대비해서 상승한 일수와
+#    하락한 일수를 계산하여 상승 일수가 며칠이었는가에 대한 비율을 나타낸다.
+#    투자심리도가 75% 이상이면 과열상태로 판단하여 매도시점이 되고,
+#    반대로 25% 이하일 경우 매수시점이 된다.
+#    매수와 매도 추천 시점을 표기하여 투자에 도움을 주도록 설계함.
+# -----------------------------------------------------------------
 
-# # 주린이의 주가 예측
-
-# In[23]:
-
-
-import pandas as pd
-import numpy as np
-import urllib.parse
 import matplotlib.pyplot as plt
 import matplotlib
 from datetime import date, timedelta
 import FinanceDataReader as fdr
 from scipy import stats
-import plotly.express as px
 from selenium import webdriver
 import bs4
 
 
-
-# In[24]:
-
-
-# 투자심리선이란 최근 2주(10일) 동안 주가가 전일과 대비해서 상승한 일수와 하락한 일수를 계산하여
-# 상승 일수가 며칠이었는가에 대한 비율을 나타낸다.
-# 투자심리도가 75% 이상이면 과열상태로 판단하여 매도시점이 되고,
-# 반대로 25% 이하일 경우 매수시점이 된다.
-
-
-# In[25]:
-
-
-# 안전하게 코스피 시가총액 상위 10위 종목만 선정
 
 # 웹브라우저 설정 및 브라우저 팝업
 options = webdriver.ChromeOptions()
@@ -40,43 +26,43 @@ options = webdriver.ChromeOptions()
 driverLoc = "C:/Users/kopo/Desktop/KND/김효관/addon/chromedriver/chromedriver.exe"
 driver = webdriver.Chrome(executable_path=driverLoc, options=options)
 
+
 # 웹페이지 파싱될때까지 최대 3초 기다림
 driver.implicitly_wait(3)
+
 
 # 브라우저 열기
 targetUrl = "https://finance.naver.com/sise/"
 driver.get(targetUrl)
 
+
 # 페이지 url 및 소스 가져오기
 finalUrl = driver.current_url
 pgSource = driver.page_source
+
 
 # BS4로 웹크롤링
 bsObj = bs4.BeautifulSoup(pgSource, "html.parser")
 findAttr = bsObj.find(name="table", attrs={"id": "siselist_tab_7"})
 findPart = findAttr.find_all(name="a")
 
+
 # 리스트에 종목 저장
 stockNameList = []
 for i in range(0, len(findPart)):
     stockNameList.append(findPart[i].text)
 
-# In[26]:
-
 
 # 종목 코드 찾기
 kospi = fdr.StockListing('kospi')
-
-# In[27]:
 
 
 # 종료일
 endDate = date.today()
 
+
 # 시작일
 beginDate = endDate - timedelta(days=90)
-
-# In[28]:
 
 
 # 추출된 종목 코드를 리스트에 담기
@@ -85,9 +71,6 @@ for i in range(len(stockNameList)):
     name = kospi[kospi['Name'] == stockNameList[i]]
     stockCode = name.iloc[0][0]
     stockCodeList.append(stockCode)
-
-
-# In[29]:
 
 
 # 지난 3개월 동안의 주식 정보 가져오기
@@ -99,16 +82,10 @@ def getStockData(stockCode, beginDate, endDate):
     return dataFrame
 
 
-# In[30]:
-
-
 def getStockNameByCode(code):
     symbol = kospi[kospi['Symbol'] == code]
     stockName = symbol.iloc[0][2]
     return stockName
-
-
-# In[31]:
 
 
 def investLineMethod(df):
@@ -134,14 +111,10 @@ def investLineMethod(df):
     return df['investLine']
 
 
-# In[32]:
-
-
 # matplotlib 한글 깨짐 방지
 font_name = matplotlib.font_manager.FontProperties(fname='C:/Windows/Fonts/malgun.ttf').get_name()
 matplotlib.rc('font', family=font_name)
 
-# In[33]:
 
 
 for code in stockCodeList:
@@ -177,12 +150,3 @@ for code in stockCodeList:
     code2 = getStockNameByCode(code)
     plt.title(code2)
     plt.show()
-
-# In[ ]:
-
-
-# In[ ]:
-
-
-
-
