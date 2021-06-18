@@ -22,8 +22,7 @@ import bs4
 
 # 웹브라우저 설정 및 브라우저 팝업
 options = webdriver.ChromeOptions()
-# driverLoc = "C:/Users/김남덕/Desktop/KOPO/김효관/stddev/addon/chromedriver/chromedriver.exe"
-driverLoc = "C:/Users/kopo/Desktop/KND/김효관/addon/chromedriver/chromedriver.exe"
+driverLoc = "<Your chromedriver file location>" # ex> "C:/Users/김남덕/stddev/addon/chromedriver/chromedriver.exe"
 driver = webdriver.Chrome(executable_path=driverLoc, options=options)
 
 
