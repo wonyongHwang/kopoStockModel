@@ -18,5 +18,6 @@
 > 3. 각 POSC 가중치를 두어 가중평균 POSC 구함. (여기서 구한 가중평균 POSC를 POSCc로 사용)
 > 4. 한 종목이 속한 산업의 POSC 구함(target stock POSC). 
 > 5. target stock POSC(%) > 0 인 경우 > 매수 결정. 
-> 5-1. target stock POSC(%) > 0 인 경우 : 해당 종목이 속한 산업의 POSC(%)(target industry stock)보다 클 경우, 과매수로 의심할 수 있음 > 매수 위험
-> 5-2. target stock posc(%) < 0 > 매도 결정.
+>> 5-1. target stock POSC(%) > 0 인 경우 : 해당 종목이 속한 산업의 POSC(%)(target industry stock)보다 클 경우, 
+>>                                       과매수로 의심할 수 있음 > 매수 위험
+>> 5-2. target stock posc(%) < 0 > 매도 결정.
