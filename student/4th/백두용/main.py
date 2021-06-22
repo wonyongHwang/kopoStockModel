@@ -1,3 +1,14 @@
+# Author: DUYONG BAEK
+# START DATE: 2021.05.27
+# CHANGES : 2021.06.16
+# Description:
+# 이 함수는 주식의 CCI지표를 볼수있도록 값을 구해줍니다.
+#    단, 종가는 주식시장에서 보여지는 있는 그대로의 종가를 사용했기 때문에 수정종가를 사용하는 실제 CCI에 비해 정확도가 떨어질 수 있습니다.
+#    - 최근의 가격이 평균가격의 이동평균과 얼마나 떨어져 있는가를 표시하여 추세의 강도와 방향을 나타내어 준다.
+#    - 가격이 한 방향으로 계속 움직일 경우에는 현재 가격이 이동편균과 멀리 떨어지게 되며 이 경우를 추세가 강하다고 볼 수 있다.
+#    - 따라서 CCI가 양(+)의 값을 가지면 상승추세, 음(-)의 값을 가질 경우에는 하락추세를 나타낸다고 할 수 있다.
+#    - CCI는 추세의 강도와 방향까지 동시에 알려주는 지표이다.
+
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
 from urllib.parse import urlparse
@@ -17,13 +28,12 @@ import json
 
 PORT_NUMBER = 8200
 
-
+# 시가 총액 상위 10개 종목이름을 가져옴('삼성전자(우)'를 제외한 11위까지의 종목)
 def topTen() -> list:
     # from bs4 import BeautifulSoup
     # import requests
     # import pandas as pd
 
-    # 시가 총액 상위 10개 종목이름을 가져옴('삼성전자(우)'를 제외한 11위까지의 종목)
     url = 'https://finance.naver.com/sise/sise_market_sum.nhn'
     topTen = pd.read_html(url, encoding='euc-kr')[1].head(18)
 
@@ -44,6 +54,7 @@ def topTen() -> list:
     return topList
 
 
+# KOSPI상위 10개 종목의 종목코드를 뽑아내는 함수
 def topTenSymbol(inValue: list) -> list:
     # from bs4 import BeautifulSoup
     # import requests
@@ -73,8 +84,8 @@ def topTenSymbol(inValue: list) -> list:
     return topSymbol
 
 
+# 종목코드의 데이터 형태를 맞춰주기 위한 lpad함수
 def zeroFill(columnValue) -> str:
-    # 종목코드의 데이터 형태를 맞춰주기 위한 lpad함수
     columnValue = str(columnValue)
     # zfill(6)은 6자리로 문자열 맞춘다. 빈자리는 앞에서 부터 0을 채움
     outValue = columnValue.zfill(6)
@@ -82,6 +93,8 @@ def zeroFill(columnValue) -> str:
     return outValue
 
 
+# 이 함수는 주식의 CCI지표를 볼수있도록 값을 구해줍니다.
+# 단, 종가는 주식시장에서 보여지는 있는 그대로의 종가를 사용했기 때문에 수정종가를 사용하는 실제 CCI에 비해 정확도가 떨어질 수 있습니다.
 def CCIftn(inValue: str, start: str) -> 'pandas.core.frame.DataFrame':
     import FinanceDataReader as web
     # CCI(Commodity Channel Index)
@@ -134,7 +147,9 @@ def CCIftn(inValue: str, start: str) -> 'pandas.core.frame.DataFrame':
     return chart
 
 
+# 주식시장의 개장일을 기준으로 N일전의 개장일과 최근의 개장일을 구하는 class
 class StockDate:
+    # 현재날짜 기준 가장 최근의 개장일을 구해줌
     def nowftn(self, chart: 'pandas.core.frame.DataFrame') -> str:
         # import datetime
         # from datetime import date, timedelta
@@ -180,6 +195,7 @@ class StockDate:
         # 현재날짜를 str형태로 반환함(ex. 2021-05-30)
         return nowDate
 
+    # 가장 최근의 개장일에서 N일전의 거래소 개장일을 구해줌
     def beforeftn(self, nowDate: str, N: int, chart: 'pandas.core.frame.DataFrame') -> str:
         # import datetime
         # from datetime import date, timedelta
@@ -221,6 +237,7 @@ class StockDate:
         return before_N_day
 
 
+# CCI지표를 기준으로 특정기간동안의 매수&매도 타이밍을 알려줌
 def tradeftn(before_day: str, nowDate: str, chart: 'pandas.core.frame.DataFrame') -> 'pandas.core.frame.DataFrame':
     # import pandas as pd
     '''
@@ -269,6 +286,7 @@ def tradeftn(before_day: str, nowDate: str, chart: 'pandas.core.frame.DataFrame'
     return CCIResult
 
 
+# 총 이익을 계산하기 위해 종목별 순이익을 리스트에 담는 함수
 def profitList(res: list) -> list:
     # 총 이익을 계산하기 위해 종목별 순이익을 리스트에 담는 함수
     # 들어오는 파라미터는 종목별 실현손익의 데이터프레임들이 담겨있는 리스트
@@ -293,6 +311,7 @@ def profitList(res: list) -> list:
     return profit
 
 
+# CCI지표를 토대로 단기투자를 실행했을 때 벌어들이는 총 이익을 구하는 함수
 def totalProfit(sumProfit: list) -> float:
     # CCI지표를 토대로 단기투자를 실행했을 때 벌어들이는 총 이익을 구하는 함수
     netIncome = 0
@@ -302,12 +321,20 @@ def totalProfit(sumProfit: list) -> float:
     return netIncome
 
 
+# CCI지표를 토대로 단기투자를 실행했을 때 벌어들이는 총 구매액을 구하는 함수
+def allUserMoney(amount: list) -> float:
+    userMoney = 0
+    for i in range(0, len(amount)):
+        userMoney += amount[i]
+    return userMoney
+
+# 그래프를 보여주는 함수
 def showResult(nowDate: str, before_day: str, chart: 'pandas.core.frame.DataFrame', symbol: str) -> 'show':
     # import matplotlib.pyplot as plt
     # 차트 시각화를 위한 함수
     # 회색 점선으로 되어있는 라인을 기준으로 매수와 매도가 결정된다.
 
-    fig = plt.figure(figsize=(20, 10))
+    fig = plt.figure(figsize=(15, 8))
     ax1 = fig.add_subplot(211)  # 2행1열의 첫번째칸에 그려라
     plt.xlim(datetime.date(int(before_day[0:4]), int(before_day[5:7]), int(before_day[8:10])), \
              datetime.date(int(nowDate[0:4]), int(nowDate[5:7]), int(nowDate[8:10])))
@@ -330,6 +357,7 @@ def showResult(nowDate: str, before_day: str, chart: 'pandas.core.frame.DataFram
     plt.show()
 
 
+# 서버를 실행하는 class
 class MyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         data = []  # response json data
@@ -341,10 +369,13 @@ class MyHandler(BaseHTTPRequestHandler):
                     # 반복문을 돌면서 차트와 손익결과를 출력함
                     for i in range(0, len(symbol)):
                         showResult(nowDate, before_day, chartList[i], symbol[i])
-                        print(top[i], "로 실현한 총이익 : ", sumProfit[i])
+                        print(before_day, "부터", nowDate, "까지")
+                        print(top[i], " : ", round(amount[i],2), "의 금액을 투자함.")
+                        print("실현한 총이익 : ", round(sumProfit[i],2), " 이익률 : ", round(sumProfit[i]/amount[i], 2), "%")
+                        print()
 
                     # 총이익을 출력함
-                    print("10개 종목으로 실현한 총 이익", income)
+                    print(round(userMoney,2), "의 금액을 투자하여 10개 종목으로 실현한 총 이익 : ", round(income,2), " 이익률 : ", round(income/userMoney, 2), "%")
 
                     self.send_response(200)
                     self.send_header('Content-type', 'application/json')
@@ -360,7 +391,7 @@ class MyHandler(BaseHTTPRequestHandler):
                     self.end_headers()
                     data.append("{info: not enough request}")
                     self.wfile.write(bytes(json.dumps(data, sort_keys=True, indent=4), "utf-8"))
-            
+
             # 시가총액 1위부터 10위까지의 종목중 원하는 범위를 지정하면 그 범위만큼의 종목들을 반환함
             elif None != re.search('/STOCK/TOP/*', self.path.upper()):
                 # http://localhost:8200/STOCK/TOP/?1~10
@@ -403,18 +434,26 @@ class MyHandler(BaseHTTPRequestHandler):
                         # 원하는 조건에 모두 부합하면 해당하는 인덱스범위의 종목을 출력함
                         if startPoint >= 0 and endPoint <= 9 and startPoint <= endPoint:
                             eachIncome = []
+                            eachInvest = []
                             # 반복문을 돌면서 차트와 손익결과를 출력함
                             for i in range(startPoint, endPoint + 1):
                                 showResult(nowDate, before_day, chartList[i], symbol[i])
-                                print(top[i], "로 실현한 총이익 : ", sumProfit[i])
-                                eachIncome.append( sumProfit[i])
-
+                                print(before_day, "부터", nowDate, "까지")
+                                print(top[i], " : ", round(amount[i], 2), "의 금액을 투자함.")
+                                print("실현한 총이익 : ", round(sumProfit[i], 2), " 이익률 : ", round(sumProfit[i] / amount[i], 2), "%")
+                                print()
+                                eachIncome.append(sumProfit[i])
+                                eachInvest.append(amount[i])
                             # 선택한 종목에 해당하는 총이익을 출력함
                             sum = 0
-                            for i in range(0,len(eachIncome)):
+                            for i in range(0, len(eachIncome)):
                                 sum += eachIncome[i]
 
-                            print(len(eachIncome),"개 종목으로 실현한 총 이익", sum)
+                            invest = 0
+                            for i in range(0, len(eachInvest)):
+                                invest += eachInvest[i]
+
+                            print(len(eachIncome), "개 종목으로 실현한 총 이익", round(sum/invest, 2), "%")
 
                             self.send_response(200)
                             self.send_header('Content-type', 'application/json')
@@ -463,6 +502,7 @@ class MyHandler(BaseHTTPRequestHandler):
 
 res = []
 chartList = []
+amount = []
 top = topTen()
 top.remove('삼성전자우')
 
@@ -476,11 +516,15 @@ for i in range(0, len(symbol)):
     openingDate = StockDate()
     nowDate = openingDate.nowftn(chart)
     before_day = openingDate.beforeftn(nowDate, 120, chart)
+    CCIResult = tradeftn(before_day, nowDate, chart)
 
-    res.append(tradeftn(before_day, nowDate, chart))
+    temp = CCIResult.loc[CCIResult['Act'] == 'buy']
+    amount.append(temp['Price'].sum())
+    userMoney = allUserMoney(amount)
+
+    res.append(CCIResult)
     sumProfit = profitList(res)
     income = totalProfit(sumProfit)
-
 
 # class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
 #     """Handle requests in a separate thread."""
