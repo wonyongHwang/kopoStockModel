@@ -1,30 +1,31 @@
+#    Author: 김승현
+#    Created: 2021.06.16
+#    Description: crawling
+#    Prerequisite : conda install -c conda-forge fbprophet
+#     > kospi top50 기업의 정보, 재무제표 데이터 사용
+#     > 선정 기업과 동일업종의 PER을 비교하여 저평가, 고평가 판단
+#     > Bollinger Bands를 통해 상한선, 하한선 내 주가 기준 설정
+#     > 선정 기업과 동일업종의 PBR을 비교하여 단기(매수/매도) 추천
+#     > 'MA_5' > 'MA_20' (1.0, 0.0 -> sell buy) / GC & DC 시각화
+
+
+
 import pandas as pd
-from http.server import BaseHTTPRequestHandler, HTTPServer
-from socketserver import ThreadingMixIn
-# import matplotlib.pyplot as plt
-from fbprophet import Prophet
-from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
 import FinanceDataReader as web
 from datetime import date, timedelta
 import matplotlib.pyplot as plt, pylab
 import numpy as np
-import urllib.parse
-import numpy as np
 from matplotlib import font_manager, rc
-import re
 import warnings
 warnings.filterwarnings(action='ignore')
-
-PORT_NUMBER = 8666
 
 
 # kospi top50 기업
 def get_finance():
     financeUrl = "https://finance.naver.com/sise/sise_market_sum.nhn?page=1"
     financeUrl = requests.get(financeUrl)
-    finance = financeUrl.text
     financeData = pd.read_html(financeUrl.text)[1][0:]
     financeData.drop(index=0, inplace=True)
     financeKey = ["토론실", "외국인비율"]
@@ -71,7 +72,6 @@ def stockPer(kospi50):
 def information(code):
     codeUrl = "https://finance.naver.com/item/main.nhn?code="
     Html = requests.get(codeUrl + code)
-    codeHtml = Html.text
     codeData = pd.read_html(Html.text)[3]
 
     codeData.set_index(("주요재무정보", "주요재무정보", "주요재무정보"), inplace=True)
@@ -117,7 +117,6 @@ def same_industryPbr(code):
 
 # 선정 기업의 주식 가격
 def stock_price(code):
-    today = date.today()
     startday = date.today() - timedelta(90)
     yesterday = date.today() - timedelta(1)
     SEC = web.DataReader(code, startday, yesterday)
@@ -126,7 +125,7 @@ def stock_price(code):
     SEC = SEC[SEC["Volume"] != 0]
 
     # log rate
-    SEC["logRate"] = np.log(SEC["Close"].astype(float) / SEC["Close"].shift(1).astype(float)) * 1000
+    # SEC["logRate"] = np.log(SEC["Close"].astype(float) / SEC["Close"].shift(1).astype(float)) * 1000
 
     SEC['MA_5'] = SEC['Close'].rolling(window=5).mean()
     SEC['MA_20'] = SEC['Close'].rolling(window=20).mean()
@@ -143,15 +142,6 @@ def stock_price(code):
     return SEC
 
 
-# 선정 기업의 futures_data (과거기준 미래 데이터 학습용)
-def futures_data(code):
-    today = date.today()
-    startday = date.today() - timedelta(90)
-    endday = date.today() + timedelta(30)
-    fitSEC = web.DataReader(code, startday, endday)
-    return fitSEC
-
-
 # 동일업종 per 비교 (고평가, 저평가)
 def evaluation_value(stockPer, sameIndustryPer):
     if stockPer > sameIndustryPer:
@@ -160,7 +150,7 @@ def evaluation_value(stockPer, sameIndustryPer):
         return "underValued"
 
 
-# upperLimit(위), lowerLimit(아래) 제외
+# (저,고)평가 일때 상한선, 하한선 내에 있을 때
 def stop_trading(evaluationValue, stockPrice):
     try:
         if ((evaluationValue == "overValued") and (
@@ -177,31 +167,17 @@ def stop_trading(evaluationValue, stockPrice):
         return "no value"
 
 
-# (고/저)평가 현재-기준 매도, 매수 추천
+# (고/저)평가일 때 선정기업의 PBR과 동일업종의 PBR 비교 후 매도, 매수 추천
 def stock_recommend(trading, information, sameIndustryPbr):
     if ((trading == "overTrading") and (information['PBR'][-1:].item() < sameIndustryPbr)):
         return "buying"
     elif ((trading == "underTrading") and (information['PBR'][-1:].item() < sameIndustryPbr)):
-        return "sell"
+        return "buying"
     else:
-        return "short-term not recommend"
+        return "short-term not recommend (sell)"
 
 
-def fit_plot(futuresData):
-    try:
-        # 예측할 날짜 ds
-        futuresData = pd.DataFrame({'ds': futuresData.index, 'y': futuresData['Close']})
-        m = Prophet()
-        m.fit(futuresData)
-        futures = m.make_future_dataframe(periods=90) # 90일
-        forecast = m.predict(futuresData)
-        m.plot_components(forecast)
-        plt.show()
-        return m
-    except Exception as e:
-        return "no plot"
-
-
+# Close, MA_5, MA_20의 선과 buy(1) & sell(-1) 시각화
 def stockPrice_plot(stockPrice, codeDf, code):
     try:
         pylab.rcParams['figure.figsize'] = (15, 9)
@@ -231,7 +207,7 @@ def stockPrice_plot(stockPrice, codeDf, code):
 
 
 kospi50 = get_finance()
-print(kospi50)
+# print(kospi50)
 codeDf = input("kospi50(종목명): ")
 code = code(kospi50)
 stockPer = stockPer(kospi50)
@@ -241,77 +217,8 @@ sameIndustryPbr = same_industryPbr(code)
 evaluationValue = evaluation_value(stockPer, sameIndustryPer)
 stockPrice = stock_price(code)
 trading = stop_trading(evaluationValue, stockPrice)
-futuresData = futures_data(code)
 stockRecommend = stock_recommend(trading, information, sameIndustryPbr)
-fitPlot = fit_plot(futuresData)
 stockPricePlot = stockPrice_plot(stockPrice, codeDf, code)
 
 result = ("종목명 : " + codeDf + "/ 종목코드 : " + code + "/ (매수/매도) 추천 : " + stockRecommend)
 print(result)
-
-# server에서 input값을 못받음 500 Error
-# class myHandler(BaseHTTPRequestHandler):
-#
-#     def do_GET(self):
-#         data = []  # response json data
-#         if None != re.search('/stock/*', self.path):
-#             if None != re.search('/stock/get_finance', self.path):
-#
-#                 try:
-#                     self.send_response(200)
-#                     self.send_header('Content-type', 'application/json')
-#                     self.end_headers()
-#
-#                     try:
-#                         kospi50 = get_finance()
-#                         codeDf = input("kospi50(종목명): ")
-#                         code = code(kospi50)
-#                         stockPer = stockPer(kospi50)
-#                         information = information(code)
-#                         sameIndustryPer = same_industryPer(code)
-#                         sameIndustryPbr = same_industryPbr(code)
-#                         evaluationValue = evaluation_value(stockPer, sameIndustryPer)
-#                         stockPrice = stock_price(code)
-#                         trading = stop_trading(evaluationValue, stockPrice)
-#                         futuresData = futures_data(code)
-#                         stockRecommend = stock_recommend(trading, information, sameIndustryPbr)
-#                         fitPlot = fit_plot(futuresData)
-#                         stockPricePlot = stockPrice_plot(stockPrice, codeDf, code)
-#
-#                         result = ("종목명 : " + codeDf + "/ 종목코드 : " + code + "/ (매수/매도) 추천 : " + stockRecommend)
-#                         print(result)
-#                         data.append(result)
-#                         self.wfile.write(bytes(json.dumps(data, sort_keys=True, indent=4), "utf-8"))
-#                     except:
-#                         print("Error")
-#                         data.append("Error")
-#                         self.wfile.write(bytes(json.dumps(data, sort_keys=True, indent=4), "utf-8"))
-#                 except:
-#                     self.send_response(500)
-#                     self.send_header('Content-type', 'application/json')
-#                     self.end_headers()
-#                     data.append("error")
-#             else:
-#                 self.send_response(404)
-#                 self.send_header('Content-type', 'application/json')
-#                 self.end_headers()
-#                 data.append("{info:no such api}")
-#                 self.wfile.write(bytes(json.dumps(data, sort_keys=True, indent=4), "utf-8"))
-#
-# # class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
-# #     """Handle requests in a separate thread."""
-#
-# try:
-#     # Create a web server and define the handler to manage the
-#     # incoming request
-#     server = HTTPServer(('', PORT_NUMBER), myHandler)
-#     # server = ThreadedHTTPServer(('', PORT_NUMBER), myHandler)
-#     print('Started httpserver on port ', PORT_NUMBER)
-#
-#     # Wait forever for incoming http requests
-#     server.serve_forever()
-#
-# except (KeyboardInterrupt, Exception) as e:
-#     print('^C received, shutting down the web server')
-#     print(e)
-#     server.socket.close()
