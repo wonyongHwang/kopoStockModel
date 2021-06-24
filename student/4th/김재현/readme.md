@@ -13,6 +13,6 @@
 ##### 3. 참고링크
 ##### - https://md2biz.tistory.com/397 각종 지표별 의미
 ##### - https://nakyup.tistory.com/5 각종 지표 가공
-##### - https://m.blog.naver.com/silvury/221312883764 배당정보 크로울링
+##### - https://m.blog.naver.com/silvury/221312883764 배당정보 크롤링
        
 ###    Prerequisites : conda install -c anaconda pandas-datareader  
