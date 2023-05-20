@@ -11,10 +11,16 @@ import matplotlib.ticker as ticker
 
 from mplfinance.original_flavor import candlestick2_ohlc # pip install https://github.com/matplotlib/mpl_finance/archive/master.zip #pip install --upgrade mplfinance
 
+
 from scipy import stats # line regression
+
+'''
 from chart_studio.plotly import plot, iplot #  conda install -c plotly chart-studio
 # import plotly.graph_objects as go
+'''
 import plotly.express as px #  conda install -c plotly plotly-orca
+
+
 import os
 
 ma1 = 5
@@ -363,10 +369,13 @@ for i in myCodeList:
     madf = getDiffMAs(i,data,ma1,ma2)
     #print(i," ",qc.get_codename_by_codenum(i),madf)
     code_name = qc.get_codename_by_codenum(i)
+    print(code_name)
     if madf is not None: # 마지막 ** 기간의 추세 확인
         tempX = list(range(0,last_period))
         tempY = madf[-(last_period)-1:-1]
         try:
+            print("Your Logic?")
+            '''
             grad, intercept, r_square, p_value, std_err = stats.linregress(tempX, tempY)
             #print(grad, intercept, r_square*r_square, p_value, std_err) # p_value <= 05, r^2 >=0..64
             if grad >= 0 :
@@ -385,12 +394,13 @@ for i in myCodeList:
                 tempStr = tempToday+"/"+code_name + ".png"
                 fig.write_image(tempStr)
                 # print(fig)
+            '''
         except Exception as e:
             print("Error Occurs while trying to get lineregress X:", tempX)
-            print("Error Occurs while trying to get lineregress Y:",tempY)
+            print("Error Occurs while trying to get lineregress Y:", tempY)
             print("Exception e :",e)
     else:
-        print(code_name," ", "ma diff gradient less than zero")
+        print(code_name," ", "ma diff err")
 
 # pycharm에서 자신의 모듈 임포트하기 위해서 필요한 설정(mark as a source root)
 # https://stackoverflow.com/questions/28705029/pycharm-error-no-module-when-trying-to-import-own-module-python-script
